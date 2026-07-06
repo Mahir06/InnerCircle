@@ -9,6 +9,7 @@ final class HangoutsViewModel: ObservableObject {
 
     private let repo = HangoutRepository()
     private let chatRepo = ChatRepository()
+    private let postcardRepo = PostcardRepository()
     private var listener: ListenerRegistration?
     private(set) var circleId = ""
     private(set) var userId = ""
@@ -160,9 +161,15 @@ final class HangoutsViewModel: ObservableObject {
         }
     }
 
+    // Ending a hangout opens the postcard: the sealing ritual starts now.
     func endHangout(_ hangout: Hangout) {
         mutate(hangout) { $0.status = .done } remote: { _ in
             try await self.repo.endHangout(hangout, circleId: self.circleId)
+            try await self.postcardRepo.createPostcard(hangout: hangout, framedBy: self.userId, circleId: self.circleId)
+            try await self.chatRepo.sendSystem(
+                "a postcard for \"\(hangout.title)\" is open! 2 days before the envelope seals ✉️",
+                circleId: self.circleId
+            )
         }
     }
 

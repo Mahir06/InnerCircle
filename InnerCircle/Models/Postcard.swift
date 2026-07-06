@@ -6,6 +6,7 @@ import FirebaseFirestore
 nonisolated struct Postcard: Codable, Identifiable, Equatable {
     @DocumentID var id: String?
     var hangoutId: String
+    var hangoutTitle: String?            // denormalized so the Mailbox needs no joins
     var templateId: String
     var blocks: [PostcardBlock]
     var contributorIds: [String]

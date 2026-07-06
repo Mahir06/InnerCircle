@@ -113,6 +113,56 @@ enum DemoContent {
         return [planning, randomizer, requested, live, done]
     }
 
+    static var postcards: [Postcard] {
+        let open = Postcard(
+            id: "demo-pc1",
+            hangoutId: "demo-h5",
+            hangoutTitle: "game night 🎲",
+            templateId: "classic",
+            blocks: [
+                PostcardBlock(id: "pb1", type: .text,
+                              content: "prem flipped the board when he lost. again.",
+                              authorId: "demo-ana", position: 0),
+                PostcardBlock(id: "pb2", type: .sticker, content: "😂", authorId: userId, position: 1),
+            ],
+            contributorIds: ["demo-ana", userId],
+            createdAt: Date().addingTimeInterval(-14 * 3600),
+            sealsAt: Date().addingTimeInterval(34 * 3600),
+            framedBy: "demo-ana"
+        )
+        let sealed = Postcard(
+            id: "demo-pc2",
+            hangoutId: "demo-h0",
+            hangoutTitle: "night on the beach 🌊",
+            templateId: "classic",
+            blocks: [
+                PostcardBlock(id: "pb3", type: .text,
+                              content: "we stayed till sunrise and regretted nothing (everything)",
+                              authorId: "demo-prem", position: 0),
+                PostcardBlock(id: "pb4", type: .sticker, content: "🌅", authorId: "demo-ana", position: 1),
+            ],
+            contributorIds: ["demo-prem", "demo-ana", userId],
+            createdAt: Date().addingTimeInterval(-40 * 86400),
+            sealsAt: Date().addingTimeInterval(-38 * 86400),
+            sealedAt: Date().addingTimeInterval(-38 * 86400),
+            framedBy: "demo-prem"
+        )
+        let capsule = Postcard(
+            id: "demo-pc3",
+            hangoutId: "demo-hx",
+            hangoutTitle: "new year's pact 🎆",
+            templateId: "classic",
+            blocks: [],
+            contributorIds: [userId],
+            createdAt: Date().addingTimeInterval(-10 * 86400),
+            sealsAt: Date().addingTimeInterval(-8 * 86400),
+            sealedAt: Date().addingTimeInterval(-8 * 86400),
+            unlockAt: Date().addingTimeInterval(300 * 86400),
+            framedBy: userId
+        )
+        return [open, sealed, capsule]
+    }
+
     private static func date(_ minutes: Double) -> Date {
         Date().addingTimeInterval(minutes * 60)
     }
