@@ -70,6 +70,49 @@ enum DemoContent {
         ]
     }
 
+    static var hangouts: [Hangout] {
+        var planning = Hangout.new(title: "biryani saturday 🍛", hostId: userId, mode: .custom)
+        planning.id = "demo-h1"
+        planning.startsAt = Date().addingTimeInterval(2 * 86400)
+        planning.place = "the new place, indiranagar"
+        planning.estCost = 500
+        planning.rsvps = [userId: .going, "demo-prem": .going, "demo-ana": .maybe]
+        planning.potluck = [
+            PotluckItem(id: "p1", label: "raita (non negotiable)", claimedBy: "demo-prem"),
+            PotluckItem(id: "p2", label: "cold drinks", claimedBy: nil),
+        ]
+        planning.tasks = [
+            HangoutTask(id: "t1", label: "book the table", assignedTo: userId, done: false),
+        ]
+        planning.bucketListItemId = "b1"
+
+        var randomizer = Hangout.new(title: "the shortlist decides 🎲", hostId: "demo-ana", mode: .randomizer)
+        randomizer.id = "demo-h2"
+        randomizer.shortlist = [
+            ShortlistIdea(id: "s1", idea: "bowling", votes: ["demo-prem"]),
+            ShortlistIdea(id: "s2", idea: "midnight drive", votes: ["demo-ana", "demo-prem"]),
+            ShortlistIdea(id: "s3", idea: "arcade takeover", votes: []),
+        ]
+
+        var requested = Hangout.new(title: "mystery plan by Mahir", hostId: "demo-prem", mode: .request)
+        requested.id = "demo-h3"
+        requested.requestedFrom = userId
+        requested.requestStatus = .pending
+
+        var live = Hangout.new(title: "beach day 🌊", hostId: "demo-prem", mode: .howAboutWe)
+        live.id = "demo-h4"
+        live.status = .live
+        live.rsvps = [userId: .going, "demo-prem": .going, "demo-ana": .going]
+        live.arrivals = ["demo-prem": Date().addingTimeInterval(-1800)]
+
+        var done = Hangout.new(title: "game night 🎲", hostId: "demo-ana", mode: .custom)
+        done.id = "demo-h5"
+        done.status = .done
+        done.createdAt = Date().addingTimeInterval(-7 * 86400)
+
+        return [planning, randomizer, requested, live, done]
+    }
+
     private static func date(_ minutes: Double) -> Date {
         Date().addingTimeInterval(minutes * 60)
     }
