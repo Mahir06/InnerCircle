@@ -19,7 +19,7 @@ struct RootView: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            if !appState.backendConnected {
+            if !appState.backendConnected && !DemoContent.isActive {
                 Text(Copy.offlineBackend)
                     .font(.caption2)
                     .padding(8)
@@ -45,18 +45,30 @@ struct SplashView: View {
 }
 
 struct MainTabView: View {
+    @State private var selection: String
+
+    init() {
+        // lets demo launches land on a specific tab (IC_START_TAB=chat etc.)
+        _selection = State(initialValue: ProcessInfo.processInfo.environment["IC_START_TAB"] ?? "home")
+    }
+
     var body: some View {
-        TabView {
+        TabView(selection: $selection) {
             HomeView()
                 .tabItem { Label("Home", systemImage: "house.fill") }
+                .tag("home")
             ChatView()
                 .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right.fill") }
+                .tag("chat")
             HangoutsView()
                 .tabItem { Label("Hangouts", systemImage: "calendar") }
+                .tag("hangouts")
             MailboxView()
                 .tabItem { Label("Mailbox", systemImage: "envelope.fill") }
+                .tag("mailbox")
             CirclePageView()
                 .tabItem { Label("Circle", systemImage: "person.3.fill") }
+                .tag("circle")
         }
     }
 }
