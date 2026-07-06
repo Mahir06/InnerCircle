@@ -8,8 +8,12 @@ struct RootView: View {
             switch appState.phase {
             case .loading:
                 SplashView()
-            case .signedOut, .needsCircle:
+            case .signedOut:
                 OnboardingView()
+            case .needsProfile:
+                ProfileSetupView()
+            case .needsCircle:
+                CircleForkView()
             case .ready:
                 MainTabView()
             }
