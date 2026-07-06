@@ -10,6 +10,7 @@ final class HangoutsViewModel: ObservableObject {
     private let repo = HangoutRepository()
     private let chatRepo = ChatRepository()
     private let postcardRepo = PostcardRepository()
+    private let stampRepo = StampRepository()
     private var listener: ListenerRegistration?
     private(set) var circleId = ""
     private(set) var userId = ""
@@ -170,6 +171,11 @@ final class HangoutsViewModel: ObservableObject {
                 "a postcard for \"\(hangout.title)\" is open! 2 days before the envelope seals ✉️",
                 circleId: self.circleId
             )
+            // stamps v1: the host made it happen, the earliest arrival wins punctuality
+            try await self.stampRepo.awardStamp(kind: .host, userId: hangout.hostId, hangoutId: hangout.id, circleId: self.circleId)
+            if let firstIn = hangout.arrivals.min(by: { $0.value < $1.value })?.key {
+                try await self.stampRepo.awardStamp(kind: .firstOneIn, userId: firstIn, hangoutId: hangout.id, circleId: self.circleId)
+            }
         }
     }
 

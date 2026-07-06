@@ -163,6 +163,19 @@ enum DemoContent {
         return [open, sealed, capsule]
     }
 
+    static var stamps: [Stamp] {
+        [
+            Stamp(id: "st1", userId: userId, kind: .host, hangoutId: "demo-h5",
+                  awardedAt: Date().addingTimeInterval(-6 * 86400)),
+            Stamp(id: "st2", userId: "demo-prem", kind: .firstOneIn, hangoutId: "demo-h5",
+                  awardedAt: Date().addingTimeInterval(-6 * 86400)),
+            Stamp(id: "st3", userId: "demo-ana", kind: .scribe, hangoutId: "demo-h5",
+                  awardedAt: Date().addingTimeInterval(-5 * 86400)),
+            Stamp(id: "st4", userId: userId, kind: .firstOneIn, hangoutId: "demo-h0",
+                  awardedAt: Date().addingTimeInterval(-39 * 86400)),
+        ]
+    }
+
     private static func date(_ minutes: Double) -> Date {
         Date().addingTimeInterval(minutes * 60)
     }

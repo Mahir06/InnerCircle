@@ -9,6 +9,7 @@ final class MailboxViewModel: ObservableObject {
 
     private let repo = PostcardRepository()
     private let storageRepo = StorageRepository()
+    private let stampRepo = StampRepository()
     private var listener: ListenerRegistration?
     private(set) var circleId = ""
     private(set) var userId = ""
@@ -98,7 +99,14 @@ final class MailboxViewModel: ObservableObject {
             }
             return
         }
-        run { try await self.repo.addBlock(block, postcardId: id, circleId: self.circleId) }
+        let firstContribution = postcard.blocks.isEmpty
+        run {
+            try await self.repo.addBlock(block, postcardId: id, circleId: self.circleId)
+            // the Scribe keeps the memory alive: first block on the postcard
+            if firstContribution {
+                try await self.stampRepo.awardStamp(kind: .scribe, userId: self.userId, hangoutId: postcard.hangoutId, circleId: self.circleId)
+            }
+        }
     }
 
     private func mutateLocal(_ id: String, _ change: (inout Postcard) -> Void) {
