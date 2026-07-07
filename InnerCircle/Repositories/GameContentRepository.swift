@@ -18,6 +18,29 @@ final class GameContentRepository {
         return games
     }
 
+    // Raw string decks for the online games (prompts drawn at session start).
+    func onlineDeck(_ key: String) -> [String] {
+        guard let url = Bundle.main.url(forResource: "seed-content", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            return []
+        }
+        if let items = root[key] as? [String] { return items }
+        return []
+    }
+
+    // Narrator lines etc. for The Snake.
+    func snakeContent() -> (narrator: [String], missions: [String]) {
+        guard let url = Bundle.main.url(forResource: "seed-content", withExtension: "json"),
+              let data = try? Data(contentsOf: url),
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let snake = root["snake_game"] as? [String: Any] else {
+            return ([], [])
+        }
+        return (snake["narrator_lines"] as? [String] ?? [],
+                snake["mission_flavors"] as? [String] ?? [])
+    }
+
     private static func build(from root: [String: Any]) -> [OfflineGame] {
         func strings(_ key: String) -> [String] {
             root[key] as? [String] ?? []

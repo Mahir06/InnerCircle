@@ -11,12 +11,13 @@ nonisolated struct Message: Codable, Identifiable, Equatable {
     var text: String?
     var poll: Poll?
     var hangoutId: String?
+    var gameSessionId: String?
     var spark: SparkDrop?
     var reactions: [String: [String]]?   // emoji -> userIds who reacted
 }
 
 nonisolated enum DropType: String, Codable {
-    case text, poll, hangoutInvite, spark, system
+    case text, poll, hangoutInvite, gameInvite, spark, system
 }
 
 nonisolated struct Poll: Codable, Equatable {

@@ -75,6 +75,8 @@ final class AISummaryService {
                 return "spark \"\(spark.prompt)\" answers: \(answers)"
             case .hangoutInvite:
                 return "\(name) dropped a hangout invite: \(message.text ?? "")"
+            case .gameInvite:
+                return "\(name) opened a game table: \(message.text ?? "")"
             }
         }.joined(separator: "\n")
     }

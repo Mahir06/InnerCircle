@@ -154,6 +154,8 @@ private struct DropBubble: View {
             bubbleRow { SparkBubble(message: message) }
         case .hangoutInvite:
             bubbleRow { HangoutInviteBubble(message: message) }
+        case .gameInvite:
+            bubbleRow { GameInviteBubble(message: message) }
         }
     }
 
@@ -333,6 +335,41 @@ private struct HangoutInviteBubble: View {
         .frame(maxWidth: 280, alignment: .leading)
         .background(Theme.card, in: RoundedRectangle(cornerRadius: 18))
         .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Theme.accent.opacity(0.4), lineWidth: 1.5))
+    }
+}
+
+private struct GameInviteBubble: View {
+    let message: Message
+    @State private var showTable = false
+
+    var body: some View {
+        Button {
+            showTable = true
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Image(systemName: "gamecontroller.fill")
+                        .foregroundStyle(Theme.accent)
+                    Text("game invite").font(.caption.bold()).foregroundStyle(.secondary)
+                }
+                Text(message.text ?? "a mystery game")
+                    .font(.subheadline.bold())
+                Text("tap to join the table")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.accent)
+            }
+            .padding(12)
+            .frame(maxWidth: 280, alignment: .leading)
+            .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 18))
+        }
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showTable) {
+            if let sessionId = message.gameSessionId {
+                NavigationStack {
+                    GameSessionView(sessionId: sessionId)
+                }
+            }
+        }
     }
 }
 

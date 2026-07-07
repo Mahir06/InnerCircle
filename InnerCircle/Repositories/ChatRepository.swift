@@ -64,6 +64,14 @@ final class ChatRepository {
         )
     }
 
+    // A game invite is just a Drop; tapping it joins the lobby.
+    func sendGameInvite(sessionId: String, title: String, senderId: String, circleId: String) async throws {
+        try await send(
+            Message(senderId: senderId, sentAt: Date(), type: .gameInvite, text: title, gameSessionId: sessionId),
+            circleId: circleId
+        )
+    }
+
     private func send(_ message: Message, circleId: String, hangoutId: String? = nil) async throws {
         guard configured else { throw FirebaseManager.notConfiguredError }
         _ = try messages(circleId, hangoutId: hangoutId).addDocument(from: message)
