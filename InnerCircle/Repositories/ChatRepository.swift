@@ -1,22 +1,27 @@
 import Foundation
 import FirebaseFirestore
 
-// Firestore access for circles/{circleId}/messages
+// Firestore access for circles/{circleId}/messages and, when a hangoutId
+// is given, the hangout's own chat at circles/{id}/hangouts/{hid}/messages.
 final class ChatRepository {
     private var db: Firestore { FirebaseManager.shared.db }
     private var configured: Bool { FirebaseManager.shared.isConfigured }
 
-    private func messages(_ circleId: String) -> CollectionReference {
-        db.collection("circles").document(circleId).collection("messages")
+    private func messages(_ circleId: String, hangoutId: String? = nil) -> CollectionReference {
+        let circle = db.collection("circles").document(circleId)
+        if let hangoutId {
+            return circle.collection("hangouts").document(hangoutId).collection("messages")
+        }
+        return circle.collection("messages")
     }
 
     // Last 100 drops, oldest first.
-    func listenMessages(circleId: String, onChange: @escaping ([Message]) -> Void) -> ListenerRegistration? {
+    func listenMessages(circleId: String, hangoutId: String? = nil, onChange: @escaping ([Message]) -> Void) -> ListenerRegistration? {
         guard configured else {
             onChange([])
             return nil
         }
-        return messages(circleId)
+        return messages(circleId, hangoutId: hangoutId)
             .order(by: "sentAt", descending: true)
             .limit(to: 100)
             .addSnapshotListener { snapshot, _ in
@@ -25,12 +30,12 @@ final class ChatRepository {
             }
     }
 
-    func sendText(_ text: String, senderId: String, circleId: String) async throws {
-        try await send(Message(senderId: senderId, sentAt: Date(), type: .text, text: text), circleId: circleId)
+    func sendText(_ text: String, senderId: String, circleId: String, hangoutId: String? = nil) async throws {
+        try await send(Message(senderId: senderId, sentAt: Date(), type: .text, text: text), circleId: circleId, hangoutId: hangoutId)
     }
 
-    func sendSystem(_ text: String, circleId: String) async throws {
-        try await send(Message(senderId: "system", sentAt: Date(), type: .system, text: text), circleId: circleId)
+    func sendSystem(_ text: String, circleId: String, hangoutId: String? = nil) async throws {
+        try await send(Message(senderId: "system", sentAt: Date(), type: .system, text: text), circleId: circleId, hangoutId: hangoutId)
     }
 
     func sendPoll(question: String, optionLabels: [String], allowsMultipleAnswers: Bool, senderId: String, circleId: String) async throws {
@@ -59,16 +64,16 @@ final class ChatRepository {
         )
     }
 
-    private func send(_ message: Message, circleId: String) async throws {
+    private func send(_ message: Message, circleId: String, hangoutId: String? = nil) async throws {
         guard configured else { throw FirebaseManager.notConfiguredError }
-        _ = try messages(circleId).addDocument(from: message)
+        _ = try messages(circleId, hangoutId: hangoutId).addDocument(from: message)
     }
 
     // Tap an option to vote; tap again to unvote. Single-answer polls
     // move your vote. Runs in a transaction so nobody's vote is lost.
-    func votePoll(messageId: String, optionId: String, userId: String, circleId: String) async throws {
+    func votePoll(messageId: String, optionId: String, userId: String, circleId: String, hangoutId: String? = nil) async throws {
         guard configured else { throw FirebaseManager.notConfiguredError }
-        let ref = messages(circleId).document(messageId)
+        let ref = messages(circleId, hangoutId: hangoutId).document(messageId)
         _ = try await db.runTransaction { transaction, errorPointer in
             do {
                 let snapshot = try transaction.getDocument(ref)
@@ -97,19 +102,19 @@ final class ChatRepository {
         }
     }
 
-    func answerSpark(messageId: String, answer: String, userId: String, circleId: String) async throws {
+    func answerSpark(messageId: String, answer: String, userId: String, circleId: String, hangoutId: String? = nil) async throws {
         guard configured else { throw FirebaseManager.notConfiguredError }
-        try await messages(circleId).document(messageId).updateData([
+        try await messages(circleId, hangoutId: hangoutId).document(messageId).updateData([
             "spark.answers.\(userId)": answer
         ])
     }
 
-    func toggleReaction(messageId: String, emoji: String, userId: String, currentlyReacted: Bool, circleId: String) async throws {
+    func toggleReaction(messageId: String, emoji: String, userId: String, currentlyReacted: Bool, circleId: String, hangoutId: String? = nil) async throws {
         guard configured else { throw FirebaseManager.notConfiguredError }
         let value: FieldValue = currentlyReacted
             ? FieldValue.arrayRemove([userId])
             : FieldValue.arrayUnion([userId])
-        try await messages(circleId).document(messageId).updateData([
+        try await messages(circleId, hangoutId: hangoutId).document(messageId).updateData([
             "reactions.\(emoji)": value
         ])
     }

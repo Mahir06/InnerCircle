@@ -151,6 +151,34 @@ struct PostcardDetailView: View {
             Text(block.content)
                 .font(.system(size: 54))
                 .frame(maxWidth: .infinity)
+        case .aiSummary:
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "wand.and.stars").foregroundStyle(Theme.accent)
+                    Text("the scribe's version").font(.caption.bold()).foregroundStyle(.secondary)
+                }
+                Text(block.content).font(.callout.italic())
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(14)
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Theme.accent.opacity(0.35), lineWidth: 1.5))
+        case .badge:
+            // content: "<stampKind>|<userId>"
+            let parts = block.content.split(separator: "|").map(String.init)
+            let kind = parts.first.flatMap { StampKind(rawValue: $0) }
+            VStack(spacing: 4) {
+                Text(kind?.emoji ?? "🏅").font(.system(size: 40))
+                Text(kind?.title ?? "mystery badge").font(.caption.bold())
+                if parts.count > 1 {
+                    Text("earned by \(appState.memberName(parts[1]))")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 14))
         }
     }
 

@@ -45,6 +45,17 @@ final class PostcardRepository {
         return ref.documentID
     }
 
+    // The postcard born from a specific hangout (used by the hangout chat's
+    // "seal the story" action).
+    func fetchPostcard(hangoutId: String, circleId: String) async throws -> Postcard? {
+        guard configured else { throw FirebaseManager.notConfiguredError }
+        let snapshot = try await postcards(circleId)
+            .whereField("hangoutId", isEqualTo: hangoutId)
+            .limit(to: 1)
+            .getDocuments()
+        return try snapshot.documents.first?.data(as: Postcard.self)
+    }
+
     func addBlock(_ block: PostcardBlock, postcardId: String, circleId: String) async throws {
         guard configured else { throw FirebaseManager.notConfiguredError }
         try await postcards(circleId).document(postcardId).updateData([

@@ -151,8 +151,10 @@ final class HangoutsViewModel: ObservableObject {
     }
 
     func startHangout(_ hangout: Hangout) {
-        mutate(hangout) { $0.status = .live } remote: {
-            try await self.repo.startHangout(hangoutId: $0, circleId: self.circleId)
+        mutate(hangout) { $0.status = .live } remote: { id in
+            try await self.repo.startHangout(hangoutId: id, circleId: self.circleId)
+            try await self.chatRepo.sendSystem("\"\(hangout.title)\" is LIVE. its chat is open 🔴", circleId: self.circleId)
+            try await self.chatRepo.sendSystem("welcome to the \(hangout.title) chat. what happens here ends up on the postcard", circleId: self.circleId, hangoutId: id)
         }
     }
 

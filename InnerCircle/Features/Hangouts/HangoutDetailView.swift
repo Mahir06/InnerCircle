@@ -317,6 +317,7 @@ struct HangoutDetailView: View {
             }
         case .live:
             sectionCard("🔴 it's happening") {
+                hangoutChatLink(hangout)
                 if hangout.arrivals[appState.authUid ?? ""] == nil {
                     Button {
                         vm.markArrival(hangout)
@@ -361,16 +362,27 @@ struct HangoutDetailView: View {
                 }
             }
         case .done:
-            VStack(spacing: 6) {
+            VStack(spacing: 10) {
                 Text("🎉 that's a wrap")
                     .font(.headline)
                 Text("check the Mailbox for the postcard")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                hangoutChatLink(hangout)
             }
             .frame(maxWidth: .infinity)
             .padding()
             .background(Theme.card, in: RoundedRectangle(cornerRadius: 16))
+        }
+    }
+
+    private func hangoutChatLink(_ hangout: Hangout) -> some View {
+        NavigationLink {
+            HangoutChatView(hangout: hangout)
+        } label: {
+            Label(hangout.status == .done ? "the hangout chat (archived)" : "open the hangout chat",
+                  systemImage: "bubble.left.and.text.bubble.right.fill")
+                .font(.subheadline.bold())
         }
     }
 

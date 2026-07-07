@@ -163,6 +163,19 @@ enum DemoContent {
         return [open, sealed, capsule]
     }
 
+    static var hangoutDrops: [Message] {
+        [
+            Message(id: "hm1", senderId: "system", sentAt: date(-120), type: .system,
+                    text: "welcome to the beach day 🌊 chat. what happens here ends up on the postcard"),
+            Message(id: "hm2", senderId: "demo-prem", sentAt: date(-110), type: .text,
+                    text: "i'm at the gate, where is everyone"),
+            Message(id: "hm3", senderId: userId, sentAt: date(-100), type: .text,
+                    text: "5 mins (a lie)", reactions: ["💀": ["demo-prem", "demo-ana"]]),
+            Message(id: "hm4", senderId: "demo-ana", sentAt: date(-40), type: .text,
+                    text: "someone bring sunscreen from the shop, prem is already toast"),
+        ]
+    }
+
     static var stamps: [Stamp] {
         [
             Stamp(id: "st1", userId: userId, kind: .host, hangoutId: "demo-h5",

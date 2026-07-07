@@ -3,11 +3,31 @@ import SwiftUI
 struct ChatView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var vm = ChatViewModel()
+
+    var body: some View {
+        NavigationStack {
+            ChatSurface(vm: vm)
+                .navigationTitle(Copy.chatTitle)
+                .navigationBarTitleDisplayMode(.inline)
+                .onAppear {
+                    if let circleId = appState.circle?.id, let uid = appState.authUid {
+                        vm.start(circleId: circleId, userId: uid)
+                    }
+                }
+        }
+        .environmentObject(vm)
+    }
+}
+
+// The message list + input bar, shared by the circle chat and each
+// hangout's chat. The parent owns the view model and starts it.
+struct ChatSurface: View {
+    @ObservedObject var vm: ChatViewModel
+    @EnvironmentObject var appState: AppState
     @State private var draft = ""
     @State private var showPollComposer = false
 
     var body: some View {
-        NavigationStack {
             VStack(spacing: 0) {
                 if vm.drops.isEmpty {
                     Spacer()
@@ -51,20 +71,12 @@ struct ChatView: View {
 
                 inputBar
             }
-            .navigationTitle(Copy.chatTitle)
-            .navigationBarTitleDisplayMode(.inline)
-            .onAppear {
-                if let circleId = appState.circle?.id, let uid = appState.authUid {
-                    vm.start(circleId: circleId, userId: uid)
-                }
-            }
             .sheet(isPresented: $showPollComposer) {
                 PollComposerSheet { question, options, multi in
                     vm.sendPoll(question: question, options: options, allowsMultiple: multi)
                 }
             }
-        }
-        .environmentObject(vm)
+            .environmentObject(vm)   // the bubbles read the vm from the environment
     }
 
     private var inputBar: some View {

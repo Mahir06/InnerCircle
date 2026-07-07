@@ -33,4 +33,6 @@ nonisolated struct PostcardBlock: Codable, Identifiable, Equatable {
 
 nonisolated enum BlockType: String, Codable {
     case text, photo, sticker
+    case badge          // a stamp earned at this hangout, framed in the journal
+    case aiSummary      // the AI scribe's recap of the hangout chat
 }
