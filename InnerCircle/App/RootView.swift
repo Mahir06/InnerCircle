@@ -45,15 +45,10 @@ struct SplashView: View {
 }
 
 struct MainTabView: View {
-    @State private var selection: String
-
-    init() {
-        // lets demo launches land on a specific tab (IC_START_TAB=chat etc.)
-        _selection = State(initialValue: ProcessInfo.processInfo.environment["IC_START_TAB"] ?? "home")
-    }
+    @StateObject private var router = TabRouter()
 
     var body: some View {
-        TabView(selection: $selection) {
+        TabView(selection: $router.selection) {
             HomeView()
                 .tabItem { Label("Home", systemImage: "house.fill") }
                 .tag("home")
@@ -70,6 +65,7 @@ struct MainTabView: View {
                 .tabItem { Label("Circle", systemImage: "person.3.fill") }
                 .tag("circle")
         }
+        .environmentObject(router)
     }
 }
 
