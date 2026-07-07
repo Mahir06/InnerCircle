@@ -39,7 +39,8 @@ final class GameSessionViewModel: ObservableObject {
     // MARK: - lobby
 
     // Creates a lobby and drops an invite in chat. Returns the session id.
-    static func openTable(game: OnlineGame, hostId: String, circleId: String) async throws -> String {
+    // firstPrompt lets a daily spark become round one of the game.
+    static func openTable(game: OnlineGame, hostId: String, circleId: String, firstPrompt: String? = nil) async throws -> String {
         let content = GameContentRepository()
         var prompts: [String]
         switch game.id {
@@ -50,6 +51,10 @@ final class GameSessionViewModel: ObservableObject {
         default: prompts = []
         }
         prompts = Array(prompts.prefix(max(game.rounds, 5)))
+        if let firstPrompt {
+            prompts.insert(firstPrompt, at: 0)
+            prompts = Array(prompts.prefix(max(game.rounds, 5)))
+        }
 
         let session = GameSession(
             gameId: game.id,

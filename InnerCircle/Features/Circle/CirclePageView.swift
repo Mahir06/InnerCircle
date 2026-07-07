@@ -20,6 +20,7 @@ struct CirclePageView: View {
                         membersSection
                         friendsSection(circle)
                         stampsSection
+                        quotesSection(circle)
                         bucketListSection(circle)
                         signOut
                     }
@@ -267,6 +268,29 @@ struct CirclePageView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("stamps").font(Theme.heading)
             StampsGrid(stamps: vm.stamps)
+        }
+    }
+
+    // MARK: hall of fame quotes
+
+    @ViewBuilder
+    private func quotesSection(_ circle: FriendCircle) -> some View {
+        if !circle.quotesArchive.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("🗣️ hall of fame").font(Theme.heading)
+                ForEach(circle.quotesArchive.sorted { $0.at > $1.at }) { quote in
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("\u{201C}\(quote.text)\u{201D}")
+                            .font(Theme.displayItalic(15))
+                        Text("- \(appState.memberName(quote.authorId)), framed by \(appState.memberName(quote.savedBy))")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .chunkyCard(Theme.paper)
+                }
+            }
         }
     }
 

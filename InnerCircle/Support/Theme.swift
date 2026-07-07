@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import CoreText
 
 // Design system v2: purple brand, Fraunces display type, Snapchat-adjacent
@@ -23,6 +24,29 @@ enum Theme {
                 CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
             }
         }
+        applyNavigationAppearance()
+    }
+
+    // Fraunces navigation titles everywhere, one appearance proxy.
+    private static func applyNavigationAppearance() {
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithDefaultBackground()
+        if let large = uiFont(size: 32, weight: .black) {
+            appearance.largeTitleTextAttributes = [.font: large]
+        }
+        if let inline = uiFont(size: 18, weight: .bold) {
+            appearance.titleTextAttributes = [.font: inline]
+        }
+        UINavigationBar.appearance().standardAppearance = appearance
+        UINavigationBar.appearance().scrollEdgeAppearance = appearance
+    }
+
+    private static func uiFont(size: CGFloat, weight: UIFont.Weight) -> UIFont? {
+        guard let base = UIFont(name: "Fraunces", size: size) else { return nil }
+        let descriptor = base.fontDescriptor.addingAttributes([
+            .traits: [UIFontDescriptor.TraitKey.weight: weight]
+        ])
+        return UIFont(descriptor: descriptor, size: size)
     }
 
     static func display(_ size: CGFloat, weight: Font.Weight = .bold) -> Font {

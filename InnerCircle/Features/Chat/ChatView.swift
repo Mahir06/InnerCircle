@@ -26,6 +26,7 @@ struct ChatSurface: View {
     @EnvironmentObject var appState: AppState
     @State private var draft = ""
     @State private var showPollComposer = false
+    @State private var openSession: GameShelfView.SessionRef?
 
     var body: some View {
             VStack(spacing: 0) {
@@ -76,7 +77,22 @@ struct ChatSurface: View {
                     vm.sendPoll(question: question, options: options, allowsMultiple: multi)
                 }
             }
+            .sheet(item: $openSession) { ref in
+                NavigationStack {
+                    GameSessionView(sessionId: ref.id)
+                }
+            }
             .environmentObject(vm)   // the bubbles read the vm from the environment
+    }
+
+    private func openTable(_ game: OnlineGame) {
+        let userId = vm.userId
+        let circleId = vm.circleId
+        Task {
+            if let id = try? await GameSessionViewModel.openTable(game: game, hostId: userId, circleId: circleId) {
+                openSession = GameShelfView.SessionRef(id: id)
+            }
+        }
     }
 
     private var inputBar: some View {
@@ -91,6 +107,15 @@ struct ChatSurface: View {
                     vm.dropSpark()
                 } label: {
                     Label("drop a spark", systemImage: "sparkles")
+                }
+                Menu {
+                    ForEach(OnlineGame.playable) { game in
+                        Button("\(game.emoji) \(game.title)") {
+                            openTable(game)
+                        }
+                    }
+                } label: {
+                    Label("open a game table", systemImage: "gamecontroller.fill")
                 }
             } label: {
                 Image(systemName: "plus.circle.fill")
