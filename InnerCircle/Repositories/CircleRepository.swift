@@ -102,11 +102,111 @@ final class CircleRepository {
         try await db.collection("circles").document(circleId).updateData(["bucketList": payload])
     }
 
-    func updateCircleProfile(name: String, coverEmoji: String, circleId: String) async throws {
+    func updateCircleProfile(name: String, coverEmoji: String, bio: String?, isPublic: Bool, circleId: String) async throws {
         guard configured else { throw FirebaseManager.notConfiguredError }
         try await db.collection("circles").document(circleId).updateData([
             "name": name,
             "coverEmoji": coverEmoji,
+            "bio": bio ?? FieldValue.delete(),
+            "isPublic": isPublic,
         ])
+    }
+
+    func updateShowcase(postcardIds: [String], circleId: String) async throws {
+        guard configured else { throw FirebaseManager.notConfiguredError }
+        try await db.collection("circles").document(circleId).updateData([
+            "showcasePostcardIds": Array(postcardIds.prefix(3))
+        ])
+    }
+
+    // MARK: - circle-to-circle friends
+
+    // Small-scale discovery: pull public circles, filter by name locally.
+    func searchPublicCircles(query: String) async throws -> [FriendCircle] {
+        guard configured else { throw FirebaseManager.notConfiguredError }
+        let snapshot = try await db.collection("circles")
+            .whereField("isPublic", isEqualTo: true)
+            .limit(to: 50)
+            .getDocuments()
+        let all = snapshot.documents.compactMap { try? $0.data(as: FriendCircle.self) }
+        let trimmed = query.trimmingCharacters(in: .whitespaces).lowercased()
+        guard !trimmed.isEmpty else { return all }
+        return all.filter { $0.name.lowercased().contains(trimmed) }
+    }
+
+    func fetchCircle(id: String) async throws -> FriendCircle? {
+        guard configured else { throw FirebaseManager.notConfiguredError }
+        return try await db.collection("circles").document(id).getDocument().data(as: FriendCircle.self)
+    }
+
+    func sendFriendRequest(from myCircle: FriendCircle, to targetCircleId: String, sentBy userId: String) async throws {
+        guard configured, let myId = myCircle.id else { throw FirebaseManager.notConfiguredError }
+        let request = CircleFriendRequest(
+            fromCircleId: myId,
+            fromCircleName: myCircle.name,
+            fromCircleEmoji: myCircle.coverEmoji,
+            sentBy: userId,
+            sentAt: Date(),
+            status: "pending"
+        )
+        let batch = db.batch()
+        try batch.setData(from: request, forDocument:
+            db.collection("circles").document(targetCircleId).collection("friendRequests").document(myId))
+        batch.updateData(["sentFriendRequests": FieldValue.arrayUnion([targetCircleId])],
+                         forDocument: db.collection("circles").document(myId))
+        try await batch.commit()
+    }
+
+    func listenIncomingRequests(circleId: String, onChange: @escaping ([CircleFriendRequest]) -> Void) -> ListenerRegistration? {
+        guard configured else {
+            onChange([])
+            return nil
+        }
+        return db.collection("circles").document(circleId).collection("friendRequests")
+            .whereField("status", isEqualTo: "pending")
+            .addSnapshotListener { snapshot, _ in
+                let requests = snapshot?.documents.compactMap { try? $0.data(as: CircleFriendRequest.self) } ?? []
+                onChange(requests.sorted { $0.sentAt > $1.sentAt })
+            }
+    }
+
+    // Accepting: mark the request accepted and add our edge. The sender's
+    // circle adds the reverse edge next time one of them checks in
+    // (syncSentRequests) — no cross-circle writes needed.
+    func acceptFriendRequest(_ request: CircleFriendRequest, myCircleId: String) async throws {
+        guard configured else { throw FirebaseManager.notConfiguredError }
+        let batch = db.batch()
+        batch.updateData(["status": "accepted"], forDocument:
+            db.collection("circles").document(myCircleId).collection("friendRequests").document(request.fromCircleId))
+        batch.updateData(["friendCircleIds": FieldValue.arrayUnion([request.fromCircleId])],
+                         forDocument: db.collection("circles").document(myCircleId))
+        try await batch.commit()
+    }
+
+    func declineFriendRequest(_ request: CircleFriendRequest, myCircleId: String) async throws {
+        guard configured else { throw FirebaseManager.notConfiguredError }
+        try await db.collection("circles").document(myCircleId)
+            .collection("friendRequests").document(request.fromCircleId).delete()
+    }
+
+    // Completes the handshake for requests we sent: accepted -> add the
+    // friend edge; request gone -> they said no, stop waiting.
+    func syncSentRequests(myCircle: FriendCircle) async throws {
+        guard configured, let myId = myCircle.id else { throw FirebaseManager.notConfiguredError }
+        for targetId in myCircle.sentFriendRequests ?? [] {
+            let doc = try await db.collection("circles").document(targetId)
+                .collection("friendRequests").document(myId).getDocument()
+            let myRef = db.collection("circles").document(myId)
+            if let status = doc.data()?["status"] as? String, status == "accepted" {
+                try await myRef.updateData([
+                    "friendCircleIds": FieldValue.arrayUnion([targetId]),
+                    "sentFriendRequests": FieldValue.arrayRemove([targetId]),
+                ])
+            } else if !doc.exists {
+                try await myRef.updateData([
+                    "sentFriendRequests": FieldValue.arrayRemove([targetId])
+                ])
+            }
+        }
     }
 }

@@ -6,6 +6,7 @@ struct InnerCircleApp: App {
 
     init() {
         _ = FirebaseManager.shared   // configure Firebase before anything else
+        Theme.registerFonts()
         _appState = StateObject(wrappedValue: AppState())
     }
 

@@ -16,6 +16,15 @@ nonisolated struct FriendCircle: Codable, Identifiable, Equatable {
     var quotesArchive: [SavedQuote]
     var createdAt: Date
 
+    // social layer (all optional: older circle docs don't have them)
+    var bio: String?
+    var isPublic: Bool?
+    var showcasePostcardIds: [String]?      // up to 3 sealed postcards on the public profile
+    var friendCircleIds: [String]?
+    var sentFriendRequests: [String]?       // target circleIds awaiting an answer
+
+    var isDiscoverable: Bool { isPublic ?? false }
+
     static let maxMembers = 10
 
     static func new(name: String, coverEmoji: String, creatorId: String) -> FriendCircle {
@@ -49,6 +58,18 @@ nonisolated struct CircleStats: Codable, Equatable {
     var hangoutsCompleted: Int
     var restaurantsVisited: Int
     var placesVisited: Int
+}
+
+// A circle asking another circle to be friends.
+// Lives at circles/{targetId}/friendRequests/{fromCircleId}.
+nonisolated struct CircleFriendRequest: Codable, Identifiable, Equatable {
+    @DocumentID var id: String?             // == fromCircleId
+    var fromCircleId: String
+    var fromCircleName: String
+    var fromCircleEmoji: String
+    var sentBy: String
+    var sentAt: Date
+    var status: String                      // pending | accepted
 }
 
 // "hall of fame" quotes saved from chat

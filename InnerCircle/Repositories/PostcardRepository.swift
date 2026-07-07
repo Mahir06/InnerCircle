@@ -45,6 +45,18 @@ final class PostcardRepository {
         return ref.documentID
     }
 
+    // Showcase postcards on a (possibly foreign) public circle profile.
+    func fetchShowcase(ids: [String], circleId: String) async throws -> [Postcard] {
+        guard configured else { throw FirebaseManager.notConfiguredError }
+        var cards: [Postcard] = []
+        for id in ids.prefix(3) {
+            if let card = try? await postcards(circleId).document(id).getDocument().data(as: Postcard.self) {
+                cards.append(card)
+            }
+        }
+        return cards
+    }
+
     // The postcard born from a specific hangout (used by the hangout chat's
     // "seal the story" action).
     func fetchPostcard(hangoutId: String, circleId: String) async throws -> Postcard? {

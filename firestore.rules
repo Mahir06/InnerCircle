@@ -64,6 +64,25 @@ service cloud.firestore {
       match /{document=**} {
         allow read, write: if isMember(circleId);
       }
+
+      // Public circles showcase up to 3 sealed postcards on their
+      // profile: those specific postcards are readable by anyone
+      // signed in. (Overlapping matches are OR'd with the member gate.)
+      match /postcards/{postcardId} {
+        allow read: if signedIn()
+          && get(/databases/$(database)/documents/circles/$(circleId)).data.get('isPublic', false) == true
+          && postcardId in get(/databases/$(database)/documents/circles/$(circleId)).data.get('showcasePostcardIds', []);
+      }
+
+      // Circle-to-circle friend requests: any member of the sending
+      // circle can knock; only the receiving circle answers.
+      match /friendRequests/{fromCircleId} {
+        allow read: if isMember(circleId) || isMember(fromCircleId);
+        allow create: if signedIn()
+          && isMember(fromCircleId)
+          && request.resource.data.fromCircleId == fromCircleId;
+        allow update, delete: if isMember(circleId) || isMember(fromCircleId);
+      }
     }
   }
 }
