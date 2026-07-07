@@ -70,6 +70,45 @@ final class PostcardRepository {
         ])
     }
 
+    // Photos live as compressed base64 in one-doc-per-photo media docs so
+    // the journal works on the free plan (Storage needs Blaze). A photo
+    // block's content is "media:<mediaId>".
+    func addMedia(_ jpegData: Data, postcardId: String, circleId: String) async throws -> String {
+        guard configured else { throw FirebaseManager.notConfiguredError }
+        let ref = postcards(circleId).document(postcardId).collection("media").document()
+        try await ref.setData([
+            "data": jpegData.base64EncodedString(),
+            "contentType": "image/jpeg",
+            "createdAt": Timestamp(date: Date()),
+        ])
+        return ref.documentID
+    }
+
+    func fetchMedia(mediaId: String, postcardId: String, circleId: String) async throws -> Data? {
+        guard configured else { throw FirebaseManager.notConfiguredError }
+        let doc = try await postcards(circleId).document(postcardId)
+            .collection("media").document(mediaId).getDocument()
+        guard let base64 = doc.data()?["data"] as? String else { return nil }
+        return Data(base64Encoded: base64)
+    }
+
+    // Contributors can pull their own block back before the envelope seals.
+    func removeBlock(blockId: String, postcardId: String, circleId: String) async throws {
+        guard configured else { throw FirebaseManager.notConfiguredError }
+        let ref = postcards(circleId).document(postcardId)
+        _ = try await db.runTransaction { transaction, errorPointer in
+            do {
+                let snapshot = try transaction.getDocument(ref)
+                guard var blocks = snapshot.data()?["blocks"] as? [[String: Any]] else { return nil }
+                blocks.removeAll { $0["id"] as? String == blockId }
+                transaction.updateData(["blocks": blocks], forDocument: ref)
+            } catch {
+                errorPointer?.pointee = error as NSError
+            }
+            return nil
+        }
+    }
+
     // Lock the postcard until a future date: a Time Capsule.
     func setTimeCapsule(postcardId: String, unlockAt: Date?, circleId: String) async throws {
         guard configured else { throw FirebaseManager.notConfiguredError }

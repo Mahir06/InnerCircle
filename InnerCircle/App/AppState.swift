@@ -32,16 +32,16 @@ final class AppState: ObservableObject {
     private var listeningCircleId: String?
 
     init() {
+        if DemoContent.isActive {
+            authUid = DemoContent.userId
+            currentUser = DemoContent.user
+            circle = DemoContent.circle
+            members = DemoContent.members
+            phase = .ready
+            return
+        }
         guard backendConnected else {
-            if DemoContent.isActive {
-                authUid = DemoContent.userId
-                currentUser = DemoContent.user
-                circle = DemoContent.circle
-                members = DemoContent.members
-                phase = .ready
-            } else {
-                phase = .signedOut
-            }
+            phase = .signedOut
             return
         }
         authRepo.listenAuthState { [weak self] uid in

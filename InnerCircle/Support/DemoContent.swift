@@ -1,11 +1,11 @@
 import Foundation
 
-// Demo mode: launch with IC_DEMO=1 while the backend is unconfigured to
-// walk the full UI with sample data. Never active once Firebase is wired.
+// Demo mode: launch with IC_DEMO=1 to walk the full UI with sample data
+// instead of the live backend. Only reachable via launch environment, so
+// normal launches (and App Store builds) never see it.
 enum DemoContent {
     static var isActive: Bool {
-        !FirebaseManager.shared.isConfigured
-            && ProcessInfo.processInfo.environment["IC_DEMO"] == "1"
+        ProcessInfo.processInfo.environment["IC_DEMO"] == "1"
     }
 
     static let userId = "demo-mahir"
@@ -140,6 +140,11 @@ enum DemoContent {
                               content: "we stayed till sunrise and regretted nothing (everything)",
                               authorId: "demo-prem", position: 0),
                 PostcardBlock(id: "pb4", type: .sticker, content: "🌅", authorId: "demo-ana", position: 1),
+                PostcardBlock(id: "pb5", type: .badge, content: "firstOneIn|\(userId)",
+                              authorId: "demo-ana", position: 2),
+                PostcardBlock(id: "pb6", type: .aiSummary,
+                              content: "night on the beach: 74 messages of chaos from Ananya, Mahir, Prem\ncrowd favorite: \"the tide stole prem's left slipper and honestly it deserved it\" (Ananya)\nthe circle has spoken: \"5 AM maggi\" won \"last snack of the night?\"",
+                              authorId: userId, position: 3),
             ],
             contributorIds: ["demo-prem", "demo-ana", userId],
             createdAt: Date().addingTimeInterval(-40 * 86400),

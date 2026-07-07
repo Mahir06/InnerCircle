@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import UIKit
 
 struct PostcardDetailView: View {
     let postcardId: String
@@ -9,9 +10,14 @@ struct PostcardDetailView: View {
     @State private var newNote = ""
     @State private var photoItem: PhotosPickerItem?
     @State private var showCapsulePicker = false
+    @State private var showBadgePicker = false
     @State private var capsuleDate = Date().addingTimeInterval(30 * 86400)
 
-    private let stickers = ["💖", "😂", "🔥", "🌟", "🫶", "🎉", "🍕", "🌈", "👑", "🦖"]
+    private let stickers = [
+        "💖", "😂", "🔥", "🌟", "🫶", "🎉", "🍕", "🌈", "👑", "🦖",
+        "😭", "💀", "🥹", "🤌", "🫠", "🎧", "🏆", "🍜", "🌊", "📸",
+        "🪩", "🧿", "🚗", "🌙",
+    ]
 
     var body: some View {
         if let postcard = vm.postcard(postcardId) {
@@ -32,6 +38,7 @@ struct PostcardDetailView: View {
                 }
                 .navigationTitle(postcard.hangoutTitle ?? "postcard")
                 .navigationBarTitleDisplayMode(.inline)
+                .onAppear { vm.loadHangoutStamps(for: postcard) }
                 .onChange(of: photoItem) { _, item in
                     guard let item else { return }
                     Task {
@@ -40,6 +47,12 @@ struct PostcardDetailView: View {
                         }
                         photoItem = nil
                     }
+                }
+                .sheet(isPresented: $showBadgePicker) {
+                    BadgePickerSheet(stamps: vm.hangoutStamps) { stamp in
+                        vm.addBadgeBlock(stamp, to: postcard)
+                    }
+                    .presentationDetents([.medium])
                 }
             }
         } else {
@@ -106,6 +119,15 @@ struct PostcardDetailView: View {
         } else {
             ForEach(postcard.blocks.sorted { $0.position < $1.position }) { block in
                 blockView(block)
+                    .contextMenu {
+                        if block.authorId == appState.authUid && !postcard.isSealed {
+                            Button(role: .destructive) {
+                                vm.deleteBlock(block, from: postcard)
+                            } label: {
+                                Label("take it back", systemImage: "trash")
+                            }
+                        }
+                    }
             }
         }
     }
@@ -126,23 +148,8 @@ struct PostcardDetailView: View {
             .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 14))
         case .photo:
             VStack(alignment: .leading, spacing: 4) {
-                AsyncImage(url: URL(string: block.content)) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().scaledToFit()
-                    case .failure:
-                        Label("photo went missing", systemImage: "photo")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 40)
-                    default:
-                        ProgressView()
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 40)
-                    }
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                photoContent(block)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
                 Text("📸 \(appState.memberName(block.authorId))")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -182,6 +189,40 @@ struct PostcardDetailView: View {
         }
     }
 
+    // Photos are either "media:<id>" docs in Firestore (free plan) or a
+    // Storage URL (Blaze, later).
+    @ViewBuilder
+    private func photoContent(_ block: PostcardBlock) -> some View {
+        if block.content.hasPrefix("media:") {
+            let mediaId = String(block.content.dropFirst("media:".count))
+            if let data = vm.media[mediaId], let image = UIImage(data: data) {
+                Image(uiImage: image).resizable().scaledToFit()
+            } else {
+                ProgressView()
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 40)
+                    .onAppear { vm.loadMedia(mediaId: mediaId, postcardId: postcardId) }
+            }
+        } else {
+            AsyncImage(url: URL(string: block.content)) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().scaledToFit()
+                case .failure:
+                    Label("photo went missing", systemImage: "photo")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 40)
+                default:
+                    ProgressView()
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 40)
+                }
+            }
+        }
+    }
+
     // MARK: add bar
 
     private func addBar(_ postcard: Postcard) -> some View {
@@ -203,6 +244,13 @@ struct PostcardDetailView: View {
                     Label("photo", systemImage: "photo.badge.plus")
                         .font(.caption.bold())
                 }
+                Button {
+                    showBadgePicker = true
+                } label: {
+                    Label("badge", systemImage: "medal.fill")
+                        .font(.caption.bold())
+                }
+                .disabled(vm.hangoutStamps.isEmpty)
                 Spacer()
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
@@ -257,6 +305,45 @@ struct PostcardDetailView: View {
         }
         .padding(14)
         .background(Theme.card, in: RoundedRectangle(cornerRadius: 16))
+    }
+
+    // MARK: badge picker
+
+    private struct BadgePickerSheet: View {
+        let stamps: [Stamp]
+        let onPick: (Stamp) -> Void
+        @Environment(\.dismiss) private var dismiss
+        @EnvironmentObject var appState: AppState
+
+        var body: some View {
+            NavigationStack {
+                List(stamps) { stamp in
+                    Button {
+                        onPick(stamp)
+                        dismiss()
+                    } label: {
+                        HStack(spacing: 12) {
+                            Text(stamp.kind.emoji).font(.title2)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(stamp.kind.title).font(.subheadline.bold())
+                                Text("earned by \(appState.memberName(stamp.userId))")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+                .navigationTitle("frame a badge")
+                .navigationBarTitleDisplayMode(.inline)
+                .overlay {
+                    if stamps.isEmpty {
+                        Text("no badges from this hangout")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
     }
 
     // MARK: footer
