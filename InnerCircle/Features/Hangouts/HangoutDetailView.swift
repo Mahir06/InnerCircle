@@ -24,6 +24,7 @@ struct HangoutDetailView: View {
                     }
 
                     requestBanner(hangout)
+                    bookingSection(hangout)
                     shortlistSection(hangout)
                     rsvpSection(hangout)
                     detailsSection(hangout)
@@ -194,6 +195,25 @@ struct HangoutDetailView: View {
     }
 
     // MARK: details
+
+    @ViewBuilder
+    private func bookingSection(_ hangout: Hangout) -> some View {
+        if let booking = hangout.venueBooking {
+            HStack(spacing: 12) {
+                Text("🎟️").font(.system(size: 28))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("booked at \(booking.venue)")
+                        .font(.subheadline.bold())
+                    Text("code \(booking.bookingCode) · by \(appState.memberName(booking.bookedBy))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            .padding(12)
+            .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 14))
+        }
+    }
 
     @ViewBuilder
     private func detailsSection(_ hangout: Hangout) -> some View {

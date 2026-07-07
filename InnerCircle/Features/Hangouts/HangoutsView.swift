@@ -133,15 +133,20 @@ private struct PlanModePickerSheet: View {
     @EnvironmentObject var vm: HangoutsViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var mode: HangoutMode?
+    @State private var showDiscover = false
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 12) {
+                modeCard("🎟️", "something real", "gigs, treks, escape rooms. book it, it becomes the plan") { showDiscover = true }
                 modeCard("✍️", "make your own plan", "you know exactly what you want. respect") { mode = .custom }
                 modeCard("💡", "how about we...", "curated ideas for the chronically indecisive") { mode = .howAboutWe }
                 modeCard("🫵", "ask someone to plan", "delegate. it's called leadership") { mode = .request }
                 modeCard("🎲", "not sure? shortlist it", "throw ideas in, everyone votes, democracy wins") { mode = .randomizer }
                 Spacer()
+            }
+            .navigationDestination(isPresented: $showDiscover) {
+                DiscoverView(onBooked: { dismiss() })
             }
             .padding(20)
             .navigationTitle("plan a hangout")

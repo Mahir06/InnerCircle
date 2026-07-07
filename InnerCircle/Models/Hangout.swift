@@ -20,6 +20,7 @@ nonisolated struct Hangout: Codable, Identifiable, Equatable {
     var requestedFrom: String?           // request mode: who was asked to plan
     var requestStatus: RequestStatus?
     var shortlist: [ShortlistIdea]?      // randomizer mode vote list
+    var venueBooking: VenueBooking?      // set when booked through Discover
     var createdAt: Date
 
     static func new(title: String, hostId: String, mode: HangoutMode) -> Hangout {
