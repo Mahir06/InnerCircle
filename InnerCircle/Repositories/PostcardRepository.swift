@@ -70,16 +70,46 @@ final class PostcardRepository {
 
     func addBlock(_ block: PostcardBlock, postcardId: String, circleId: String) async throws {
         guard configured else { throw FirebaseManager.notConfiguredError }
+        var payload: [String: Any] = [
+            "id": block.id,
+            "type": block.type.rawValue,
+            "content": block.content,
+            "authorId": block.authorId,
+            "position": block.position,
+        ]
+        if let x = block.x { payload["x"] = x }
+        if let y = block.y { payload["y"] = y }
+        if let rotation = block.rotation { payload["rotation"] = rotation }
+        if let scale = block.scale { payload["scale"] = scale }
+        if let z = block.z { payload["z"] = z }
         try await postcards(circleId).document(postcardId).updateData([
-            "blocks": FieldValue.arrayUnion([[
-                "id": block.id,
-                "type": block.type.rawValue,
-                "content": block.content,
-                "authorId": block.authorId,
-                "position": block.position,
-            ]]),
+            "blocks": FieldValue.arrayUnion([payload]),
             "contributorIds": FieldValue.arrayUnion([block.authorId]),
         ])
+    }
+
+    // Moves/spins/resizes one collage element. Transaction so two people
+    // rearranging at once don't clobber each other's blocks.
+    func updateBlockPlacement(blockId: String, x: Double, y: Double, rotation: Double, scale: Double, z: Int, postcardId: String, circleId: String) async throws {
+        guard configured else { throw FirebaseManager.notConfiguredError }
+        let ref = postcards(circleId).document(postcardId)
+        _ = try await db.runTransaction { transaction, errorPointer in
+            do {
+                let snapshot = try transaction.getDocument(ref)
+                guard var blocks = snapshot.data()?["blocks"] as? [[String: Any]] else { return nil }
+                for i in blocks.indices where blocks[i]["id"] as? String == blockId {
+                    blocks[i]["x"] = x
+                    blocks[i]["y"] = y
+                    blocks[i]["rotation"] = rotation
+                    blocks[i]["scale"] = scale
+                    blocks[i]["z"] = z
+                }
+                transaction.updateData(["blocks": blocks], forDocument: ref)
+            } catch {
+                errorPointer?.pointee = error as NSError
+            }
+            return nil
+        }
     }
 
     // Photos live as compressed base64 in one-doc-per-photo media docs so

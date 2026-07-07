@@ -64,7 +64,7 @@ struct MailboxView: View {
             }
             .navigationTitle("Mailbox")
             .navigationDestination(for: String.self) { postcardId in
-                PostcardDetailView(postcardId: postcardId)
+                PostcardCanvasView(postcardId: postcardId)
                     .environmentObject(vm)
             }
             .onAppear {
@@ -102,66 +102,127 @@ struct MailboxView: View {
     }
 }
 
-// MARK: - Postcard card
+// MARK: - the envelope
 
+// Skeuomorphic envelope: open flap with the collage peeking out while
+// contributions are live, closed flap with a wax seal once it's sealed,
+// padlock badge for time capsules.
 struct PostcardCard: View {
     let postcard: Postcard
     @EnvironmentObject var appState: AppState
 
+    private var envelopeColor: Color { Color(red: 0.94, green: 0.90, blue: 0.83) }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text(postcard.isLockedCapsule ? "🔒" : "💌")
-                    .font(.system(size: 28))
-                VStack(alignment: .leading, spacing: 2) {
+        VStack(spacing: 0) {
+            ZStack(alignment: .top) {
+                // envelope body
+                VStack(alignment: .leading, spacing: 5) {
+                    Spacer(minLength: 30)
                     Text(postcard.isLockedCapsule ? "Time Capsule" : (postcard.hangoutTitle ?? "untitled memory"))
-                        .font(.headline)
-                    Text(postcard.createdAt.formatted(date: .abbreviated, time: .omitted))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(Theme.display(17, weight: .bold))
+                        .foregroundStyle(Theme.ink)
+                    // address lines
+                    Text("to: \(appState.circle?.name ?? "the circle")")
+                        .font(Theme.displayItalic(12))
+                        .foregroundStyle(Theme.ink.opacity(0.6))
+                    Text(addressLine)
+                        .font(.caption2)
+                        .foregroundStyle(Theme.ink.opacity(0.45))
                 }
-                Spacer()
-                sealBadge
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.bottom, 12)
+                .background(envelopeColor, in: RoundedRectangle(cornerRadius: 10))
+
+                // flap
+                EnvelopeFlap(open: !postcard.isSealed)
+                    .fill(postcard.isSealed ? envelopeColor.opacity(0.97) : Theme.paper)
+                    .overlay(EnvelopeFlap(open: !postcard.isSealed).stroke(Theme.ink.opacity(0.12), lineWidth: 1))
+                    .frame(height: 34)
+
+                // wax seal or countdown chip
+                if postcard.isLockedCapsule {
+                    sealCircle("🔒")
+                } else if postcard.isSealed {
+                    sealCircle(appState.circle?.coverEmoji ?? "💌")
+                } else {
+                    Text(sealCountdown(postcard.sealsAt))
+                        .font(.caption2.bold())
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(.orange, in: Capsule())
+                        .foregroundStyle(.white)
+                        .offset(y: 20)
+                }
+
+                // postage corner
+                Text("💌")
+                    .font(.system(size: 13))
+                    .padding(4)
+                    .background(.white.opacity(0.8))
+                    .overlay(Rectangle().strokeBorder(Theme.ink.opacity(0.2), style: StrokeStyle(lineWidth: 1, dash: [2, 2])))
+                    .rotationEffect(.degrees(4))
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+                    .padding(.trailing, 12)
+                    .offset(y: 40)
             }
-            if !postcard.isLockedCapsule {
-                HStack(spacing: 4) {
-                    Text("\(postcard.blocks.count) block\(postcard.blocks.count == 1 ? "" : "s")")
+            .shadow(color: .black.opacity(0.10), radius: 6, y: 3)
+
+            HStack(spacing: 4) {
+                if postcard.isLockedCapsule, let unlockAt = postcard.unlockAt {
+                    Text("unlocks \(unlockAt.formatted(date: .long, time: .omitted))")
+                } else {
+                    Text("\(postcard.blocks.count) thing\(postcard.blocks.count == 1 ? "" : "s") on the collage")
                     Text("·")
-                    Text("\(postcard.contributorIds.count) contributor\(postcard.contributorIds.count == 1 ? "" : "s")")
-                    if let framedBy = postcard.framedBy {
-                        Text("·")
-                        Text("framed by \(appState.memberName(framedBy))")
-                    }
+                    Text("\(postcard.contributorIds.count) hands")
                 }
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            } else if let unlockAt = postcard.unlockAt {
-                Text("unlocks \(unlockAt.formatted(date: .long, time: .omitted))")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
             }
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+            .padding(.top, 6)
         }
-        .padding(14)
-        .background(Theme.card, in: RoundedRectangle(cornerRadius: 16))
+        .padding(.bottom, 4)
     }
 
-    @ViewBuilder
-    private var sealBadge: some View {
-        if postcard.isSealed {
-            Text("sealed ✉️")
-                .font(.caption2.bold())
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(.green.opacity(0.15), in: Capsule())
-                .foregroundStyle(.green)
+    private var addressLine: String {
+        postcard.createdAt.formatted(date: .long, time: .omitted)
+    }
+
+    private func sealCircle(_ emoji: String) -> some View {
+        Text(emoji)
+            .font(.system(size: 16))
+            .frame(width: 36, height: 36)
+            .background(
+                SwiftUI.Circle()
+                    .fill(LinearGradient(colors: [Theme.accent, Theme.accentDeep],
+                                         startPoint: .top, endPoint: .bottom))
+            )
+            .overlay(SwiftUI.Circle().strokeBorder(.white.opacity(0.4), lineWidth: 1.5))
+            .shadow(color: Theme.accent.opacity(0.4), radius: 3, y: 2)
+            .offset(y: 16)
+    }
+}
+
+// Triangle flap: points down when sealed, folded up (out of the way) when open.
+private struct EnvelopeFlap: Shape {
+    let open: Bool
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        if open {
+            // open flap: a shallow trapezoid rising above the envelope
+            path.move(to: CGPoint(x: 0, y: rect.maxY))
+            path.addLine(to: CGPoint(x: rect.midX, y: rect.minY - 6))
+            path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
         } else {
-            Text(sealCountdown(postcard.sealsAt))
-                .font(.caption2.bold())
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(.orange.opacity(0.15), in: Capsule())
-                .foregroundStyle(.orange)
+            // closed flap: triangle folded down over the body
+            path.move(to: CGPoint(x: 0, y: 0))
+            path.addLine(to: CGPoint(x: rect.midX, y: rect.maxY))
+            path.addLine(to: CGPoint(x: rect.maxX, y: 0))
         }
+        path.closeSubpath()
+        return path
     }
 }
 

@@ -26,13 +26,22 @@ nonisolated struct Postcard: Codable, Identifiable, Equatable {
 nonisolated struct PostcardBlock: Codable, Identifiable, Equatable {
     var id: String
     var type: BlockType
-    var content: String                  // text, photo URL, or sticker emoji
+    var content: String                  // text, photo pointer, sticker emoji, or doodle path data
     var authorId: String
     var position: Int
+
+    // collage canvas placement (normalized 0-1; legacy blocks get a
+    // deterministic scatter so old postcards still look collaged)
+    var x: Double?
+    var y: Double?
+    var rotation: Double?                // degrees
+    var scale: Double?
+    var z: Int?
 }
 
 nonisolated enum BlockType: String, Codable {
     case text, photo, sticker
     case badge          // a stamp earned at this hangout, framed in the journal
     case aiSummary      // the AI scribe's recap of the hangout chat
+    case doodle         // finger drawing: "colorway|x,y x,y;x,y ..." normalized strokes
 }

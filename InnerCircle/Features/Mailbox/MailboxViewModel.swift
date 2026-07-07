@@ -109,6 +109,33 @@ final class MailboxViewModel: ObservableObject {
         addBlock(type: .badge, content: "\(stamp.kind.rawValue)|\(stamp.userId)", to: postcard)
     }
 
+    func addDoodleBlock(_ encoded: String, to postcard: Postcard) {
+        addBlock(type: .doodle, content: encoded, to: postcard)
+    }
+
+    // Collage: commit an element's new place on the canvas.
+    func updatePlacement(_ block: PostcardBlock, in postcard: Postcard, x: Double, y: Double, rotation: Double, scale: Double, z: Int) {
+        guard let postcardId = postcard.id else { return }
+        if DemoContent.isActive {
+            mutateLocal(postcardId) { card in
+                for i in card.blocks.indices where card.blocks[i].id == block.id {
+                    card.blocks[i].x = x
+                    card.blocks[i].y = y
+                    card.blocks[i].rotation = rotation
+                    card.blocks[i].scale = scale
+                    card.blocks[i].z = z
+                }
+            }
+            return
+        }
+        run {
+            try await self.repo.updateBlockPlacement(
+                blockId: block.id, x: x, y: y, rotation: rotation, scale: scale, z: z,
+                postcardId: postcardId, circleId: self.circleId
+            )
+        }
+    }
+
     func deleteBlock(_ block: PostcardBlock, from postcard: Postcard) {
         guard block.authorId == userId, !postcard.isSealed, let postcardId = postcard.id else { return }
         if DemoContent.isActive {
@@ -145,12 +172,18 @@ final class MailboxViewModel: ObservableObject {
 
     private func addBlock(type: BlockType, content: String, to postcard: Postcard) {
         guard let id = postcard.id else { return }
+        // new elements land slightly scattered, like tossing a photo on a table
         let block = PostcardBlock(
             id: UUID().uuidString,
             type: type,
             content: content,
             authorId: userId,
-            position: postcard.blocks.count
+            position: postcard.blocks.count,
+            x: Double.random(in: 0.3...0.7),
+            y: Double.random(in: 0.25...0.65),
+            rotation: Double.random(in: -9...9),
+            scale: 1.0,
+            z: postcard.blocks.count + 1
         )
         if DemoContent.isActive {
             mutateLocal(id) {
