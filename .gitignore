@@ -6,3 +6,4 @@ DerivedData/
 node_modules/
 .firebase/
 *-debug.log
+GoogleService-Info.plist
