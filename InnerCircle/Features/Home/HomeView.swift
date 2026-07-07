@@ -5,6 +5,8 @@ struct HomeView: View {
     @EnvironmentObject var router: TabRouter
     @StateObject private var vm = HomeViewModel()
     @State private var showStatusSheet = false
+    // demo tooling: IC_START_TAB=shelf lands straight on the Game Shelf
+    @State private var showShelf = ProcessInfo.processInfo.environment["IC_START_TAB"] == "shelf"
 
     var body: some View {
         NavigationStack {
@@ -13,6 +15,7 @@ struct HomeView: View {
                     statusBar
                     carousel
                     sparkCard
+                    gameShelfCard
                 }
                 .padding(16)
             }
@@ -21,6 +24,9 @@ struct HomeView: View {
                 if let circleId = appState.circle?.id, let uid = appState.authUid {
                     vm.start(circleId: circleId, userId: uid)
                 }
+            }
+            .navigationDestination(isPresented: $showShelf) {
+                GameShelfView()
             }
             .sheet(isPresented: $showStatusSheet) {
                 StatusSheet { text, emoji in
@@ -175,6 +181,29 @@ struct HomeView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Theme.card, in: RoundedRectangle(cornerRadius: 18))
         }
+    }
+
+    // MARK: game shelf
+
+    private var gameShelfCard: some View {
+        NavigationLink {
+            GameShelfView()
+        } label: {
+            HStack(spacing: 12) {
+                Text("🎴").font(.system(size: 30))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("the Game Shelf").font(.subheadline.bold())
+                    Text("10 party decks, phone is the dealer")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right").foregroundStyle(.tertiary)
+            }
+            .padding(14)
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: 18))
+        }
+        .buttonStyle(.plain)
     }
 }
 

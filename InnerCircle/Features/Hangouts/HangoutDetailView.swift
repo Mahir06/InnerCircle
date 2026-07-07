@@ -346,6 +346,12 @@ struct HangoutDetailView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                NavigationLink {
+                    GameShelfView()
+                } label: {
+                    Label("start an offline game", systemImage: "gamecontroller.fill")
+                        .font(.subheadline.bold())
+                }
                 if isHost {
                     Button("end hangout (postcard time)") {
                         vm.endHangout(hangout)
