@@ -17,10 +17,10 @@ private struct StoryPagesView: View {
     let onDone: () -> Void
     @State private var page = 0
 
-    private let pages: [(emoji: String, title: String, line: String)] = [
-        ("⭕️", "one circle. your people.", "no feeds, no followers, no strangers. just the group chat that matters"),
-        ("📅", "plans that actually happen", "posters, RSVPs, potluck sign-ups. the plan stops dying in the chat"),
-        ("💌", "memories that seal themselves", "after every hangout a postcard opens. 2 days to add your bit, then the envelope seals forever"),
+    private let pages: [(slot: String, title: String, line: String)] = [
+        ("onboarding-circle", "one circle. your people.", "no feeds, no followers, no strangers. just the group chat that matters"),
+        ("onboarding-plans", "plans that actually happen", "posters, RSVPs, potluck sign-ups. the plan stops dying in the chat"),
+        ("onboarding-postcard", "memories that seal themselves", "after every hangout a postcard opens. 2 days to add your bit, then the envelope seals forever"),
     ]
 
     var body: some View {
@@ -28,8 +28,8 @@ private struct StoryPagesView: View {
             TabView(selection: $page) {
                 ForEach(pages.indices, id: \.self) { i in
                     VStack(spacing: 20) {
-                        Text(pages[i].emoji).font(.system(size: 80))
-                        Text(pages[i].title).font(.title.bold())
+                        Illustration(slot: pages[i].slot, size: 190)
+                        Text(pages[i].title).font(Theme.title)
                             .multilineTextAlignment(.center)
                         Text(pages[i].line)
                             .font(.body)
@@ -43,20 +43,14 @@ private struct StoryPagesView: View {
             .tabViewStyle(.page)
             .indexViewStyle(.page(backgroundDisplayMode: .always))
 
-            Button {
+            Button(page < pages.count - 1 ? "continue" : "let's go") {
                 if page < pages.count - 1 {
                     withAnimation { page += 1 }
                 } else {
                     onDone()
                 }
-            } label: {
-                Text(page < pages.count - 1 ? "next" : "let's go")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Theme.accent, in: RoundedRectangle(cornerRadius: 16))
-                    .foregroundStyle(.white)
             }
+            .buttonStyle(ChunkyButtonStyle())
             .padding(.horizontal, 24)
 
             Button("skip the tour", action: onDone)
@@ -89,7 +83,7 @@ private struct AuthFormView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
 
             Spacer()
-            Text("⭕️").font(.system(size: 56))
+            Illustration(slot: "mascot-hello", size: 130)
             Text(isSignUp ? "claim your spot" : "welcome back")
                 .font(.title.bold())
             Text(isSignUp ? "one account, one circle, zero strangers" : Copy.lastSeen)
@@ -124,20 +118,15 @@ private struct AuthFormView: View {
             Button {
                 submit()
             } label: {
-                Group {
-                    if busy {
-                        ProgressView().tint(.white)
-                    } else {
-                        Text(isSignUp ? "create account" : "sign in")
-                    }
+                if busy {
+                    ProgressView().tint(.white)
+                } else {
+                    Text(isSignUp ? "create account" : "sign in")
                 }
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Theme.accent, in: RoundedRectangle(cornerRadius: 16))
-                .foregroundStyle(.white)
             }
+            .buttonStyle(ChunkyButtonStyle())
             .disabled(busy || email.isEmpty || password.isEmpty)
+            .opacity(email.isEmpty || password.isEmpty ? 0.5 : 1)
 
             HStack {
                 Button(isSignUp ? "already in? sign in" : "new here? create account") {

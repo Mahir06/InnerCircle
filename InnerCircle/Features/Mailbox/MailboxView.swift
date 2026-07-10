@@ -16,7 +16,7 @@ struct MailboxView: View {
             Group {
                 if vm.postcards.isEmpty {
                     VStack(spacing: 8) {
-                        Text("📭").font(.system(size: 48))
+                        Illustration(slot: "empty-mailbox")
                         Text(Copy.mailboxEmpty).foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                     }

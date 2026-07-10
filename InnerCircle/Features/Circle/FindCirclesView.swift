@@ -35,7 +35,7 @@ struct FindCirclesView: View {
                     ProgressView().frame(maxWidth: .infinity).padding(.top, 40)
                 } else if searched && results.isEmpty {
                     VStack(spacing: 8) {
-                        Text("🔭").font(.system(size: 44))
+                        Illustration(slot: "mascot-search", size: 120)
                         Text("no circles out there with that name")
                             .font(.footnote)
                             .foregroundStyle(.secondary)

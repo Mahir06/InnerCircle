@@ -10,7 +10,7 @@ struct HangoutsView: View {
             Group {
                 if vm.hangouts.isEmpty {
                     VStack(spacing: 8) {
-                        Text("🗓️").font(.system(size: 48))
+                        Illustration(slot: "empty-hangouts")
                         Text(Copy.hangoutsEmpty).foregroundStyle(.secondary)
                         Button("plan something") { showModePicker = true }
                             .buttonStyle(.borderedProminent)

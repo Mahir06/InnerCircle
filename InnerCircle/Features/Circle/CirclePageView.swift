@@ -111,7 +111,7 @@ struct CirclePageView: View {
 
     private var heatMapSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("the pulse").font(Theme.heading)
+            SectionLabel("the pulse")
             ActivityHeatMap(dates: vm.activityDates)
         }
         .padding(14)
@@ -164,7 +164,7 @@ struct CirclePageView: View {
     private var requestsSection: some View {
         if !vm.incomingRequests.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
-                Text("knock knock").font(Theme.heading)
+                SectionLabel("knock knock")
                 ForEach(vm.incomingRequests) { request in
                     HStack(spacing: 12) {
                         Text(request.fromCircleEmoji).font(.title2)
@@ -196,7 +196,7 @@ struct CirclePageView: View {
 
     private var membersSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("the circle").font(Theme.heading)
+            SectionLabel("the circle")
             ForEach(appState.members) { member in
                 NavigationLink {
                     IDCardView(member: member, stamps: vm.stamps(for: member.id ?? ""),
@@ -236,7 +236,7 @@ struct CirclePageView: View {
     private func friendsSection(_ circle: FriendCircle) -> some View {
         if !vm.friendCircles.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
-                Text("friend circles").font(Theme.heading)
+                SectionLabel("friend circles")
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
                         ForEach(vm.friendCircles) { friend in
@@ -266,7 +266,7 @@ struct CirclePageView: View {
 
     private var stampsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("stamps").font(Theme.heading)
+            SectionLabel("stamps")
             StampsGrid(stamps: vm.stamps)
         }
     }
@@ -277,7 +277,7 @@ struct CirclePageView: View {
     private func quotesSection(_ circle: FriendCircle) -> some View {
         if !circle.quotesArchive.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
-                Text("🗣️ hall of fame").font(Theme.heading)
+                SectionLabel("hall of fame")
                 ForEach(circle.quotesArchive.sorted { $0.at > $1.at }) { quote in
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\u{201C}\(quote.text)\u{201D}")
@@ -298,7 +298,7 @@ struct CirclePageView: View {
 
     private func bucketListSection(_ circle: FriendCircle) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("🪣 bucket list").font(Theme.heading)
+            SectionLabel("bucket list")
             if circle.bucketList.isEmpty {
                 Text("no dreams yet? tragic. add one")
                     .font(.caption)

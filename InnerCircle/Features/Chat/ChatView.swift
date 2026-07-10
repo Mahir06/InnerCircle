@@ -33,7 +33,7 @@ struct ChatSurface: View {
                 if vm.drops.isEmpty {
                     Spacer()
                     VStack(spacing: 8) {
-                        Text("🫥").font(.system(size: 48))
+                        Illustration(slot: "empty-chat")
                         Text(Copy.chatEmpty)
                             .foregroundStyle(.secondary)
                     }

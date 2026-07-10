@@ -436,7 +436,7 @@ struct PostcardCanvasView: View {
 
     private func lockedView(_ postcard: Postcard) -> some View {
         VStack(spacing: 14) {
-            Text("🔒").font(.system(size: 64))
+            Illustration(slot: "locked-capsule", size: 160)
             Text("Time Capsule").font(Theme.title)
             if let unlockAt = postcard.unlockAt {
                 Text("this memory unlocks \(unlockAt.formatted(date: .long, time: .omitted))")
